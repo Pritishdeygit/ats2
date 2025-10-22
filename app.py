@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+
 load_dotenv()
 
 import io
@@ -9,20 +10,24 @@ from PIL import Image
 import pdf2image
 import google.generativeai as genai
 
-# Configure Google API key from environment variable
+
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
-# Function to get Gemini response
-def get_gemini_response(input_text, pdf_content, prompt):
-    model = genai.GenerativeModel('gemini-2.5-flash-lite')
-    response = model.generate_content([input_text, pdf_content[0], prompt])
-    return response.text
+def get_gemini_response(input,pdf_content,prompt):
+    model= genai.GenerativeModel('gemini-2.5-flash-lite')
+    response = model.generate_content([input,pdf_content[0],prompt])
+    return response.text 
 
-# Function to convert uploaded PDF to images (works on Streamlit Cloud)
 def input_pdf_setup(uploaded_file):
     if uploaded_file is not None:
-        # Convert PDF to images (Poppler installed via apt.txt on Streamlit Cloud)
-        images = pdf2image.convert_from_bytes(uploaded_file.read())
+        # Specify Poppler path
+        poppler_path = r"C:\Users\LENOVO\poppler\poppler-25.07.0\Library\bin"
+
+        # Convert PDF to image using Poppler
+        images = pdf2image.convert_from_bytes(
+            uploaded_file.read(),
+            poppler_path=poppler_path
+        )
 
         first_page = images[0]
 
@@ -40,51 +45,57 @@ def input_pdf_setup(uploaded_file):
         ]
         return pdf_parts
     else:
+        # Raise error if no file is uploaded
         raise FileNotFoundError("No file uploaded.")
+    
+##Streamlit App
 
-# Streamlit App
-st.set_page_config(page_title="ATS RESUME EXPERT")
+st.set_page_config(page_title= "ATS RESUME EXPERT")
 st.header("ATS Tracking System")
-
-input_text = st.text_area("Job Description: ", key="input")
-uploaded_file = st.file_uploader("Upload your resume in PDF format", type=["pdf"])
+input_text=st.text_area("Job Description: ",key="input")
+uploaded_file = st.file_uploader("Upload your resume in pdf format",type=["pdf"])
 
 if uploaded_file is not None:
-    st.write("PDF uploaded successfully")
+    st.write("PDF uploaded succesffuly")
 
 submit1 = st.button("Tell me about the resume")
+
+
 submit3 = st.button("Percentage match")
 
-input_prompt1 = """
-You are an experienced HR with Tech Experience in Data Science, Full Stack Web Development,
-Big Data Engineering, DEVOPS, Data Analyst roles. Review the provided resume against the job description
-and share your professional evaluation. Highlight strengths and weaknesses.
-Simply list the points.
+
+input_prompt1=""" You are an experienced HR with Tech Experience in the field of Data Science,Full Stack
+web development,Big Data Engineering,DEVOPS,Data Analyst, your task is to review the provided
+resume against the job description for these profiles.
+Please share your professional evaluation on whether the candidate's profile aligns with the role.
+Highlight the strengths and weaknesses of the applicant in relation to the specified job role.
+simply list out the points"""
+
+
+input_prompt3 ="""
+You are an skilled ATS (Applicant Tracking System) scanner with a deep understanding of Data Science,Data Science,Full Stack
+web development,Big Data Engineering,DEVOPS,Data Analyst and deep ATS functionality,
+Your task is to evaluate the resume against the provided Job Description. Give me the percentage match if the resume matches
+the job description. First the output should come as percentage and them keywords missing and last final
+thoughts.
+simply give me the percentage and then list the missing keywords
 """
 
-input_prompt3 = """
-You are a skilled ATS (Applicant Tracking System) scanner with deep understanding of
-Data Science, Full Stack Web Development, Big Data Engineering, DEVOPS, Data Analyst.
-Evaluate the resume against the job description. Give the percentage match first,
-then list missing keywords, and finally provide overall thoughts.
-"""
 
-# Handle "Tell me about the resume"
 if submit1:
     if uploaded_file is not None:
-        pdf_content = input_pdf_setup(uploaded_file)
-        response = get_gemini_response(input_prompt1, pdf_content, input_text)
-        st.subheader("The response is:")
+        pdf_content= input_pdf_setup(uploaded_file)
+        response= get_gemini_response(input_prompt1,pdf_content,input_text)
+        st.subheader("The response is ")
         st.write(response)
     else:
-        st.write("Please upload a resume.")
-
-# Handle "Percentage match"
+        st.write("Please upload a the resume")
 elif submit3:
     if uploaded_file is not None:
-        pdf_content = input_pdf_setup(uploaded_file)
-        response = get_gemini_response(input_prompt3, pdf_content, input_text)
-        st.subheader("The response is:")
+        pdf_content= input_pdf_setup(uploaded_file)
+        response= get_gemini_response(input_prompt3,pdf_content,input_text)
+        st.subheader("The response is ")
         st.write(response)
     else:
-        st.write("Please upload a resume.")
+        st.write("Please Upload the resume")
+
