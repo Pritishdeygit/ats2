@@ -1,49 +1,81 @@
 from dotenv import load_dotenv
 load_dotenv()
 
+import io
 import streamlit as st
+import base64
 import os
+from PIL import Image
+import pdf2image
 import google.generativeai as genai
-from PyPDF2 import PdfReader
 
-# Configure Google API
+# Configure the Google API
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 # --------------------- Helper Functions ---------------------
 
-def get_gemini_response(input_text, pdf_text, prompt):
+def get_gemini_response(input_text, pdf_content, prompt):
     """
     Calls Google Gemini API with the provided text, PDF content, and prompt.
     """
-    if not pdf_text:
+    if pdf_content is None:
         return "PDF content not available."
 
     try:
         model = genai.GenerativeModel('gemini-2.5-flash-lite')
-        response = model.generate_content([input_text, pdf_text, prompt])
+        response = model.generate_content([input_text, pdf_content[0], prompt])
         return response.text
     except Exception as e:
         return f"Error calling Gemini API: {e}"
 
-def extract_pdf_text(uploaded_file):
+
+def input_pdf_setup(uploaded_file):
     """
-    Extracts text from the uploaded PDF file using PyPDF2.
+    Converts the first page of an uploaded PDF into a base64-encoded image for Streamlit display.
+    Compatible with Streamlit Cloud.
     """
     if uploaded_file is None:
-        st.error("No file uploaded. Please upload a PDF.")
-        return ""
+        st.error("No file uploaded. Please upload a PDF file.")
+        return None
 
     try:
-        pdf_reader = PdfReader(uploaded_file)
-        text = ""
-        for page in pdf_reader.pages:
-            text += page.extract_text() + "\n"
-        if not text.strip():
-            st.warning("PDF has no readable text. Please upload a text-based PDF.")
-        return text
+        # Read the uploaded PDF into bytes
+        pdf_bytes = uploaded_file.read()
+        
+        # Convert PDF to images (all pages)
+        images = pdf2image.convert_from_bytes(pdf_bytes)
+        
+        if not images:
+            st.error("Unable to process PDF. It may be empty or corrupted.")
+            return None
+
+        # Take the first page
+        first_page = images[0]
+
+        # Convert the first page to bytes
+        img_byte_arr = io.BytesIO()
+        first_page.save(img_byte_arr, format='JPEG')
+        img_bytes = img_byte_arr.getvalue()
+
+        # Encode image to base64
+        pdf_parts = [
+            {
+                "mime_type": "image/jpeg",
+                "data": base64.b64encode(img_bytes).decode()
+            }
+        ]
+        return pdf_parts
+
+    except pdf2image.exceptions.PDFInfoNotInstalledError:
+        st.error(
+            "PDF processing failed because Poppler is not installed. "
+            "Streamlit Cloud should have Poppler by default."
+        )
+        return None
+
     except Exception as e:
-        st.error(f"Error reading PDF: {e}")
-        return ""
+        st.error(f"An unexpected error occurred while processing the PDF: {e}")
+        return None
 
 # --------------------- Streamlit App ---------------------
 
@@ -55,7 +87,7 @@ input_text = st.text_area("Job Description:", key="input")
 
 # Upload resume
 uploaded_file = st.file_uploader("Upload your resume in PDF format", type=["pdf"])
-if uploaded_file:
+if uploaded_file is not None:
     st.success("PDF uploaded successfully!")
 
 # Buttons
@@ -78,20 +110,20 @@ against the Job Description. Give percentage match first, then missing keywords,
 # --------------------- Button Actions ---------------------
 
 if submit1:
-    if uploaded_file:
-        pdf_text = extract_pdf_text(uploaded_file)
-        if pdf_text:
-            response = get_gemini_response(input_text, pdf_text, input_prompt1)
+    if uploaded_file is not None:
+        pdf_content = input_pdf_setup(uploaded_file)
+        if pdf_content:
+            response = get_gemini_response(input_text, pdf_content, input_prompt1)
             st.subheader("Evaluation Response")
             st.write(response)
     else:
         st.warning("Please upload a resume.")
 
 elif submit3:
-    if uploaded_file:
-        pdf_text = extract_pdf_text(uploaded_file)
-        if pdf_text:
-            response = get_gemini_response(input_text, pdf_text, input_prompt3)
+    if uploaded_file is not None:
+        pdf_content = input_pdf_setup(uploaded_file)
+        if pdf_content:
+            response = get_gemini_response(input_text, pdf_content, input_prompt3)
             st.subheader("Percentage Match Response")
             st.write(response)
     else:
