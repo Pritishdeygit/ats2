@@ -21,7 +21,7 @@ def get_gemini_response(input,pdf_content,prompt):
 def input_pdf_setup(uploaded_file):
     if uploaded_file is not None:
         # Specify Poppler path
-        poppler_path = r"C:\Users\LENOVO\poppler\poppler-25.07.0\Library\bin"
+        uploaded_file.read()
 
         # Convert PDF to image using Poppler
         images = pdf2image.convert_from_bytes(
