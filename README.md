@@ -35,14 +35,14 @@ ATS Resume Expert is a web application that helps evaluate resumes against job d
 git clone https://github.com/your-username/ats-resume-expert.git
 cd ats-resume-expert
 
-Create a virtual environment (recommended):
+**Create a virtual environment (recommended):**
 
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
 venv\Scripts\activate     # Windows
 
 
-Install dependencies:
+##Install dependencies:
 
 pip install -r requirements.txt
 
@@ -51,14 +51,14 @@ Add your Google API key in a .env file:
 
 GOOGLE_API_KEY=your_google_api_key_here
 
-Usage
+##Usage
 
 Run the Streamlit app:
 
 streamlit run app.py
 
 
-Open the app in your browser (usually opens automatically at http://localhost:8501).
+##Open the app in your browser (usually opens automatically at http://localhost:8501).
 
 Steps in the app:
 
@@ -78,13 +78,13 @@ Upload resume and input job description.
 
 AI-generated evaluation of resume.
 
-Notes
+##Notes
 
 Ensure Poppler is installed if running locally for PDF processing (pdf2image dependency).
 
 Compatible with Streamlit Cloud, which includes Poppler by default.
 
-Author
+##Author
 
 Pritish Dey
 
@@ -93,5 +93,6 @@ Email: pritish.dey2003@gmail.com
 LinkedIn: linkedin.com/in/pritishdey
 
 Location: Guwahati, Assam, India
+
 
 
